@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Message SM</title>
+     <link rel="icon" href="https://www.shutterstock.com/image-vector/3d-chat-message-blue-speech-600nw-2526279873.jpg"
+          type="image/png">
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+     <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+
+     <div id="auth-container">
+          <div class="auth-form-wrapper">
+               <form id="login-form">
+                    <h2>Giriş Yap</h2>
+                    <input type="email" name="email" class="form-control" placeholder="E-posta" required>
+                    <input type="password" name="password" class="form-control" placeholder="Şifre" required>
+                    <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
+                    <p class="text-center mt-3">Hesabın yok mu? <a href="#" id="show-register">Kayıt Ol</a></p>
+               </form>
+               <form id="register-form" style="display: none;">
+                    <h2>Kayıt Ol</h2>
+                    <input type="email" name="email" class="form-control" placeholder="E-posta" required>
+                    <input type="password" name="password" class="form-control" placeholder="Şifre" required>
+                    <button type="submit" class="btn btn-primary w-100">Kayıt Ol</button>
+                    <p class="text-center mt-3">Zaten hesabın var mı? <a href="#" id="show-login">Giriş Yap</a></p>
+               </form>
+          </div>
+     </div>
+
+     <div id="app-wrapper" class="app-container">
+          <div class="left-panel">
+               <header class="panel-header">
+                    <div id="current-user-info"></div>
+                    <div class="header-actions">
+                         <button id="settings-btn" title="Ayarlar"><i class="fas fa-cog" style="margin: 10px;font-size: 22px;color: cadetblue;"></i></button>
+                         <button id="logout-btn" title="Çıkış Yap"><i class="fas fa-sign-out-alt"></i></button>
+                    </div>
+               </header>
+               <div id="user-list">
+               </div>
+          </div>
+
+          <div class="right-panel">
+               <div id="welcome-screen" class="chat-panel-main">
+                    <div>
+                         <i class="fas fa-comments welcome-icon"></i>
+                         <h2>GeminiApp'e Hoş Geldiniz</h2>
+                         <p>Mesajlaşmaya başlamak için soldaki listeden bir sohbet seçin.</p>
+                    </div>
+               </div>
+
+               <div id="chat-view-active" class="chat-panel-main">
+                    <header class="panel-header">
+                         <div id="chat-header-info">
+                              <span id="chat-with-user"></span>
+                              <span id="chat-partner-status"></span>
+                         </div>
+                         <button id="edit-nickname-btn" title="Takma adı düzenle"><i class="fas fa-pen"></i></button>
+                    </header>
+                    <div id="messages-container">
+                    </div>
+                    <div id="typing-indicator-container">
+                    </div>
+                    <footer class="chat-footer">
+                         <div class="attachment-wrapper">
+                              <button id="attachment-btn"><i class="fas fa-paperclip"></i></button>
+                              <div id="attachment-menu">
+                                   <button id="send-photo-btn"><i class="fas fa-image"></i> Fotoğraf</button>
+                              </div>
+                         </div>
+                         <input type="file" id="image-input" accept="image/*" style="display: none;">
+
+                         <form id="chat-form">
+                              <input type="text" id="message-input" placeholder="Bir mesaj yazın..." autocomplete="off">
+                              <button type="submit" id="send-btn"><i class="fas fa-paper-plane"></i></button>
+                         </form>
+                    </footer>
+               </div>
+          </div>
+          <div class="fab-container">
+               <div class="fab-menu">
+                    <div class="fab-item">
+                         <span class="fab-label">Yeni Grup</span>
+                         <button class="fab-button-small" title="Yeni Grup Oluştur">
+                              <i class="fas fa-users"></i>
+                         </button>
+                    </div>
+                    <div class="fab-item">
+                         <span class="fab-label">Yeni Kişi</span>
+                         <button class="fab-button-small" title="Yeni Kişi Ekle">
+                              <i class="fas fa-user-plus"></i>
+                         </button>
+                    </div>
+               </div>
+               <button id="fab-main-btn" class="fab-button-main">
+                    <i class="fas fa-plus"></i>
+               </button>
+          </div>
+     </div>
+     <div id="new-contact-screen" class="fullscreen-panel">
+          <header class="panel-header">
+               <button class="back-btn" data-target="app-wrapper"><i class="fas fa-arrow-left"></i></button>
+               <h3>Yeni Kişi Ekle</h3>
+               <div></div>
+          </header>
+          <div class="panel-content">
+               <p>Buraya yeni kişi eklemek için gerekli form elemanları (input, buton vb.) gelecek.</p>
+               <form id="add-contact-form" class="p-3">
+                    <div class="mb-3">
+                         <label for="contact-email" class="form-label">Kullanıcının E-postası</label>
+                         <input type="email" id="contact-email" class="form-control" placeholder="ornek@gmail.com"
+                              required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Kişiyi Ekle</button>
+               </form>
+          </div>
+     </div>
+
+     <div id="new-group-screen" class="fullscreen-panel">
+          <header class="panel-header">
+               <button class="back-btn" data-target="app-wrapper"><i class="fas fa-arrow-left"></i></button>
+               <h3>Yeni Grup Oluştur</h3>
+               <div></div>
+          </header>
+          <div class="panel-content">
+               <p>Buraya yeni grup oluşturmak için gerekli form elemanları (grup adı, üye seçimi vb.) gelecek.</p>
+               <form id="create-group-form" class="p-3">
+                    <div class="mb-3">
+                         <label for="group-name" class="form-label">Grup Adı</label>
+                         <input type="text" id="group-name" class="form-control" placeholder="Grubun adı..." required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Grubu Oluştur</button>
+               </form>
+          </div>
+     </div>
+
+     <div id="settings-screen" class="fullscreen-panel">
+          <header class="panel-header">
+               <button class="back-btn" data-target="app-wrapper"><i class="fas fa-arrow-left"></i></button>
+               <h3>Ayarlar</h3>
+               <div></div>
+          </header>
+          <div class="panel-content settings-content">
+               <div class="settings-profile">
+                    <div class="profile-avatar-large" id="settings-avatar"></div>
+                    <div class="profile-info">
+                         <span id="settings-username" class="username">Kullanıcı Adı</span>
+                         <span id="settings-email" class="email">ornek@gmail.com</span>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+               </div>
+
+               <div class="settings-list">
+                    <div class="settings-section">
+                         <div class="settings-item">
+                              <div class="item-icon"><i class="fas fa-palette"></i></div>
+                              <div class="item-text">
+                                   <span class="item-title">Karanlık Mod</span>
+                              </div>
+                              <div class="item-action">
+                                   <label class="switch">
+                                        <input type="checkbox" id="theme-toggle">
+                                        <span class="slider round"></span>
+                                   </label>
+                              </div>
+                         </div>
+                         <div class="settings-item">
+                              <div class="item-icon"><i class="fas fa-image"></i></div>
+                              <div class="item-text">
+                                   <span class="item-title">Sohbet Duvar Kağıdı</span>
+                              </div>
+                              <div class="item-action"><i class="fas fa-chevron-right"></i></div>
+                         </div>
+                    </div>
+
+                    <div class="settings-section">
+                         <div class="settings-item">
+                              <div class="item-icon"><i class="fas fa-key"></i></div>
+                              <div class="item-text">
+                                   <span class="item-title">Şifre Değiştir</span>
+                              </div>
+                              <div class="item-action"><i class="fas fa-chevron-right"></i></div>
+                         </div>
+                         <div class="settings-item">
+                              <div class="item-icon"><i class="fas fa-trash-alt" style="color: #e53935;"></i></div>
+                              <div class="item-text">
+                                   <span class="item-title" style="color: #e53935;">Hesabı Sil</span>
+                              </div>
+                         </div>
+                    </div>
+
+                    <div class="settings-section">
+                         <div class="settings-item">
+                              <div class="item-icon"><i class="fas fa-sign-out-alt"></i></div>
+                              <div class="item-text">
+                                   <span class="item-title">Çıkış Yap</span>
+                              </div>
+                         </div>
+                         <div class="settings-item">
+                              <div class="item-icon"><i class="fas fa-question-circle"></i></div>
+                              <div class="item-text">
+                                   <span class="item-title">Yardım Merkezi</span>
+                              </div>
+                         </div>
+                         <div class="settings-item">
+                              <div class="item-icon"><i class="fas fa-info-circle"></i></div>
+                              <div class="item-text">
+                                   <span class="item-title">Uygulama Hakkında</span>
+                              </div>
+                         </div>
+                    </div>
+               </div>
+          </div>
+     </div>
+
+
+     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+     <script src="config.js"></script>
+     <script src="controller.js"></script>
+</body>
+
+</html>
