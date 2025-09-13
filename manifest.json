@@ -1,9 +1,9 @@
 {
      "name": "Sync Sink",
-     "short_name": "SS Chat",
+     "short_name": "Sync Chat",
      "start_url": ".",
      "display": "standalone",
-     "background_color": "#ffffff",
+     "background_color": "#00c1a7",
      "theme_color": "#000000",
      "icons": [
           {

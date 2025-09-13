@@ -339,6 +339,10 @@ html {
      align-self: flex-start;
 }
 
+.message-content {
+    /* Metin rengini, temanın ana metin rengi değişkenine bağlar */
+    color: var(--text-primary);
+}
 .message-content img {
      max-width: 100%;
      border-radius: 6px;
@@ -586,6 +590,7 @@ html {
 .message-meta .ticks.read {
      color: #53bdeb;
 }
+
 .fab-container {
      position: absolute;
      right: 30px;
@@ -662,7 +667,7 @@ html {
      font-size: 0.9rem;
      font-weight: 500;
 
-     background: rgba(255, 255, 255, 0.7);
+     background: var(--primary-light);
      backdrop-filter: blur(8px);
      -webkit-backdrop-filter: blur(8px);
      border: 1px solid rgba(255, 255, 255, 0.2);
@@ -697,7 +702,7 @@ html {
      left: 0;
      width: 100%;
      height: 100%;
-     background-color: #fff;
+     background-color: #ffffff;
      z-index: 200;
      display: none;
      flex-direction: column;
@@ -723,6 +728,7 @@ html {
      overflow-y: auto;
      padding: 20px;
 }
+
 .settings-content {
      padding: 0;
      background-color: var(--background-gray);
@@ -889,7 +895,6 @@ html[data-theme='dark'] {
      --panel-border: #2f3b44;
 }
 
-/* Dark modda bazı özel geçişler */
 html[data-theme='dark'] .settings-profile,
 html[data-theme='dark'] .settings-section {
      background-color: var(--bubble-received);
@@ -953,4 +958,24 @@ html[data-theme='dark'] body {
 
 html[data-theme='dark'] .chat-panel-main .panel-header {
      background-color: var(--bubble-received);
+}
+
+.email-suggestion {
+     font-size: 0.85rem;
+     color: var(--text-secondary);
+     margin-top: -10px;
+     margin-bottom: 10px;
+     padding: 0 5px;
+     height: 20px;
+}
+
+.email-suggestion a {
+     color: var(--primary-light);
+     font-weight: 500;
+     text-decoration: none;
+     cursor: pointer;
+}
+
+.email-suggestion a:hover {
+     text-decoration: underline;
 }

@@ -1,7 +1,6 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-     // --- 1. DOM ELEMENTLERİ ---
      const authContainer = document.getElementById('auth-container');
      const appWrapper = document.getElementById('app-wrapper');
      const loginForm = document.getElementById('login-form');
@@ -31,7 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
      const fabNewGroupBtn = document.querySelector('.fab-button-small[title="Yeni Grup Oluştur"]');
      const backBtns = document.querySelectorAll('.back-btn');
 
-     // --- Ayarlar Ekranı Mantığı ---
      const settingsBtn = document.getElementById('settings-btn');
      const settingsScreen = document.getElementById('settings-screen');
      const settingsAvatar = document.getElementById('settings-avatar');
@@ -39,7 +37,9 @@ document.addEventListener('DOMContentLoaded', () => {
      const settingsEmail = document.getElementById('settings-email');
      const themeToggle = document.getElementById('theme-toggle');
 
-     // --- 2. UYGULAMA DURUMU (STATE) ---
+     const registerFormEmailInput = document.querySelector('#register-form input[name="email"]');
+     const emailSuggestion = document.getElementById('email-suggestion');
+
      let currentUser = null;
      let currentChatPartnerId = null;
      let currentChatListener = null;
@@ -63,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
                appWrapper.style.display = 'none';
                if (activeListeners) { Object.values(activeListeners).forEach(ref => ref.off()); }
                activeListeners = {};
+               showPanel('auth-container');
           }
      });
 
@@ -144,25 +145,162 @@ document.addEventListener('DOMContentLoaded', () => {
      }
 
      logoutBtn.addEventListener('click', () => {
-          const isConfirmed = window.confirm('Hesabınızdan çıkış yapmak istediğinize emin misiniz?');
-          if (isConfirmed) {
-               usersRef.child(currentUser.uid).update({ status: 'offline', lastSeen: firebase.database.ServerValue.TIMESTAMP })
-                    .then(() => {
-                         auth.signOut();
-                    });
-          }
+          Swal.fire({
+               title: 'Emin misiniz?',
+               text: "Hesabınızdan çıkış yapmak üzeresiniz!",
+               icon: 'warning',
+               showCancelButton: true,
+               confirmButtonColor: '#3085d6',
+               cancelButtonColor: '#d33',
+               confirmButtonText: 'Evet, çıkış yap!',
+               cancelButtonText: 'İptal'
+          }).then((result) => {
+               if (result.isConfirmed) {
+                    usersRef.child(currentUser.uid).update({ status: 'offline', lastSeen: firebase.database.ServerValue.TIMESTAMP })
+                         .then(() => {
+                              auth.signOut();
+                         });
+               }
+          });
      });
 
      registerForm.addEventListener('submit', (e) => {
           e.preventDefault();
-          auth.createUserWithEmailAndPassword(registerForm.email.value, registerForm.password.value)
-               .then(cred => { usersRef.child(cred.user.uid).set({ email: cred.user.email, uid: cred.user.uid }); })
-               .catch(err => alert(err.message));
+          const email = registerForm.email.value;
+          const password = registerForm.password.value;
+
+          const validationResult = validateEmail(email);
+
+          if (!validationResult.isValid) {
+               let errorMessage = '';
+               switch (validationResult.reason) {
+                    case 'EMPTY':
+                         errorMessage = 'E-posta alanı boş bırakılamaz.';
+                         break;
+                    case 'INVALID_FORMAT':
+                         errorMessage = 'Lütfen geçerli bir e-posta formatı girin.';
+                         break;
+                    case 'DISPOSABLE_EMAIL':
+                         errorMessage = 'Tek kullanımlık e-posta adresleri ile kayıt yapılamaz.';
+                         break;
+                    case 'TYPO':
+                         errorMessage = `Yazım hatası olabilir. Bunu mu demek istediniz: <strong>${validationResult.suggestion}</strong>?`;
+                         break;
+                    default:
+                         errorMessage = 'Geçersiz e-posta adresi.';
+               }
+
+               Swal.fire({
+                    icon: 'warning',
+                    title: 'Geçersiz E-posta',
+                    html: errorMessage,
+                    confirmButtonColor: 'var(--primary-dark)'
+               });
+               return;
+          }
+
+          registerForm.addEventListener('submit', (e) => {
+               e.preventDefault();
+
+               const email = registerForm.email.value;
+               const password = registerForm.password.value;
+               const submitButton = registerForm.querySelector('button[type="submit"]');
+
+               const originalButtonText = submitButton.innerHTML;
+               submitButton.disabled = true;
+               submitButton.innerHTML = `
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    Kaydediliyor...
+               `;
+
+               const validationResult = validateEmail(email);
+               if (!validationResult.isValid) {
+                    Swal.fire({
+                         icon: 'warning',
+                         title: 'Geçersiz E-posta',
+                         html: `Yazım hatası olabilir. Bunu mu demek istediniz: <strong>${validationResult.suggestion}</strong>?` || 'Lütfen geçerli bir e-posta adresi girin.',
+                         confirmButtonColor: 'var(--primary-dark)'
+                    });
+
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
+                    return;
+               }
+
+               auth.createUserWithEmailAndPassword(email, password)
+                    .then(cred => {
+                         cred.user.sendEmailVerification();
+                         return usersRef.child(cred.user.uid).set({
+                              email: cred.user.email,
+                              uid: cred.user.uid,
+                              status: 'offline',
+                              lastSeen: firebase.database.ServerValue.TIMESTAMP
+                         });
+                    })
+                    .then(() => {
+                         auth.signOut();
+                         Swal.fire({
+                              icon: 'success',
+                              title: 'Kayıt Neredeyse Tamam!',
+                              html: `<strong>${email}</strong> adresine bir doğrulama linki gönderdik.<br><br>Lütfen e-posta kutunuzu kontrol ederek hesabınızı doğrulayın ve ardından giriş yapın.`,
+                              confirmButtonColor: 'var(--primary-dark)'
+                         });
+                    })
+                    .catch(err => {
+                         Swal.fire({
+                              icon: 'error',
+                              title: 'Kayıt Başarısız',
+                              html: translateFirebaseError(err.code),
+                              confirmButtonColor: 'var(--primary-dark)'
+                         });
+                    })
+                    .finally(() => {
+                         submitButton.disabled = false;
+                         submitButton.innerHTML = originalButtonText;
+                         showLoginLink.click();
+                    });
+          });
      });
+
+
 
      loginForm.addEventListener('submit', (e) => {
           e.preventDefault();
-          auth.signInWithEmailAndPassword(loginForm.email.value, loginForm.password.value).catch(err => alert(err.message));
+          const email = loginForm.email.value;
+          const password = loginForm.password.value;
+
+          auth.signInWithEmailAndPassword(email, password)
+               .then((userCredential) => {
+                    if (userCredential.user.emailVerified) {
+                         console.log("E-posta doğrulanmış, giriş başarılı.");
+                    } else {
+                         auth.signOut();
+                         userCredential.user.sendEmailVerification();
+                         Swal.fire({
+                              icon: 'warning',
+                              title: 'E-posta Doğrulanmamış',
+                              html: "Giriş yapmadan önce e-posta adresinizi doğrulamanız gerekmektedir. Lütfen e-posta kutunuzu kontrol edin.",
+                              showDenyButton: true,
+                              confirmButtonText: 'Tamam',
+                              denyButtonText: `Doğrulama Linkini Tekrar Gönder`,
+                              confirmButtonColor: 'var(--primary-dark)',
+                              denyButtonColor: '#757575'
+                         }).then((result) => {
+                              if (result.isDenied) {
+                                   userCredential.user.sendEmailVerification();
+                                   Swal.fire('Gönderildi!', 'Doğrulama linki e-posta adresinize tekrar gönderildi.', 'success');
+                              }
+                         });
+                    }
+               })
+               .catch(err => {
+                    let errorCode = err.code;
+                    try {
+                         const errorJson = JSON.parse(err.message);
+                         if (errorJson.error.message) errorCode = errorJson.error.message;
+                    } catch (e) { console.log("Hata JSON formatında değil."); }
+                    Swal.fire({ icon: 'error', title: 'Giriş Başarısız', html: translateFirebaseError(errorCode), confirmButtonColor: 'var(--primary-dark)' });
+               });
      });
      showRegisterLink.addEventListener('click', (e) => { e.preventDefault(); loginForm.style.display = 'none'; registerForm.style.display = 'block'; });
      showLoginLink.addEventListener('click', (e) => { e.preventDefault(); loginForm.style.display = 'block'; registerForm.style.display = 'none'; });
@@ -215,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
                document.querySelectorAll('.user-item').forEach(item => item.classList.remove('active'));
                userItem.classList.add('active');
                const partnerId = userItem.dataset.uid;
-               const displayName = userNicknames[partnerId]?.nickname || user.email.split('@')[0];
+               const displayName = userNicknames[partnerId]?.nickname || userItem.dataset.email.split('@')[0];;
                currentChatPartnerId = partnerId;
                welcomeScreen.style.display = 'none';
                chatViewActive.style.display = 'flex';
@@ -328,8 +466,8 @@ document.addEventListener('DOMContentLoaded', () => {
      }
 
      /**
-      * @param {number} timestamp - Firebase'den gelen tarih damgası.
-      * @returns {string} - Formatlanmış tarih ve saat.
+      * @param {number} timestamp
+      * @returns {string}
       */
      function formatFullTimestamp(timestamp) {
           if (!timestamp) return '';
@@ -417,4 +555,116 @@ document.addEventListener('DOMContentLoaded', () => {
           document.querySelector('.right-panel .panel-header').prepend(backBtn);
      }
      createBackButton();
+     if (registerFormEmailInput) {
+          registerFormEmailInput.addEventListener('blur', function () {
+               Mailcheck.run({
+                    email: this.value,
+
+                    suggested: function (suggestion) {
+                         const suggestionText = `Bunu mu demek istediniz: <a id="suggestion-link" href="#">${suggestion.full}</a>?`;
+                         emailSuggestion.innerHTML = suggestionText;
+
+                         const suggestionLink = document.getElementById('suggestion-link');
+                         if (suggestionLink) {
+                              suggestionLink.addEventListener('click', (e) => {
+                                   e.preventDefault();
+                                   registerFormEmailInput.value = suggestion.full;
+                                   emailSuggestion.innerHTML = '';
+                              });
+                         }
+                    },
+
+                    empty: function () {
+                         emailSuggestion.innerHTML = '';
+                    }
+               });
+          });
+     }
+
 });
+
+/**
+ * @param {string} errorCode
+ * @returns {string}
+ */
+function translateFirebaseError(errorCode) {
+     switch (errorCode) {
+          case "INVALID_LOGIN_CREDENTIALS":
+               return "<b>E-posta veya şifre hatalı.</b><br>Lütfen bilgilerinizi kontrol edip tekrar deneyin.";
+          case "auth/user-not-found":
+          case "auth/wrong-password":
+               return "<b>E-posta veya şifre hatalı.</b><br>Lütfen bilgilerinizi kontrol edip tekrar deneyin.";
+          case "auth/too-many-requests":
+               return "<b>Çok fazla hatalı deneme yapıldı.</b><br>Güvenlik nedeniyle hesabınız geçici olarak kilitlenmiştir.<br>Lütfen daha sonra tekrar deneyin.";
+          case "auth/network-request-failed":
+               return "<b>İnternet bağlantınızda bir sorun var.</b><br>Lütfen bağlantınızı kontrol edin.";
+          case "auth/email-already-in-use":
+               return "Bu e-posta adresi zaten başka bir hesap tarafından kullanılıyor.";
+          case "auth/weak-password":
+               return "Şifre çok zayıf.<br>Lütfen en az 6 karakterli daha güçlü bir şifre seçin.";
+          case "auth/user-disabled":
+               return "<b>Hesap devredışı bırakılmıştır.</b><br>Sistem yöneticisine başvurunuz.";
+          default:
+               return "<b>Bilinmeyen bir hata oluştu.</b><br>Lütfen daha sonra tekrar deneyin.";
+     }
+}
+
+/**
+ * @param {string} email
+ * @returns {object}
+ */
+function validateEmail(email) {
+     if (!email || typeof email !== 'string') {
+          return { isValid: false, reason: 'EMPTY', suggestion: null };
+     }
+     email = email.trim().toLowerCase();
+
+     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+     if (!emailRegex.test(email)) {
+          return { isValid: false, reason: 'INVALID_FORMAT', suggestion: null };
+     }
+
+     const [localPart, domainPart] = email.split('@');
+
+     const commonDomains = [
+          'gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com', 'icloud.com',
+          'aol.com', 'yandex.com', 'protonmail.com'
+     ];
+
+     function levenshteinDistance(s1, s2) {
+          s1 = s1.toLowerCase(); s2 = s2.toLowerCase();
+          const costs = [];
+          for (let i = 0; i <= s1.length; i++) {
+               let lastValue = i;
+               for (let j = 0; j <= s2.length; j++) {
+                    if (i === 0) costs[j] = j;
+                    else if (j > 0) {
+                         let newValue = costs[j - 1];
+                         if (s1.charAt(i - 1) !== s2.charAt(j - 1)) newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                         costs[j - 1] = lastValue;
+                         lastValue = newValue;
+                    }
+               }
+               if (i > 0) costs[s2.length] = lastValue;
+          }
+          return costs[s2.length];
+     }
+
+     let minDistance = Infinity;
+     let closestDomain = null;
+
+     commonDomains.forEach(domain => {
+          const distance = levenshteinDistance(domainPart, domain);
+          if (distance < minDistance) {
+               minDistance = distance;
+               closestDomain = domain;
+          }
+     });
+
+     if (minDistance > 0 && minDistance < 3) {
+          const suggestion = `${localPart}@${closestDomain}`;
+          return { isValid: false, reason: 'TYPO', suggestion: suggestion };
+     }
+
+     return { isValid: true, reason: null, suggestion: null };
+}
